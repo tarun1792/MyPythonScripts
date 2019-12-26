@@ -9,6 +9,12 @@ class IpaAnalyzer:
         self.ipaName = ipaName
         self.extractInfo()
 
+    def prRed(self,skk):
+        print("\033[91m{}\033[00m" .format(skk))
+
+    def prGreen(self,skk):
+        print("\033[92m{}\033[00m" .format(skk))
+
     #unzip the Ipa file
     def extractInfo(self):
             dictionary = self.getPlistFile()
@@ -18,7 +24,7 @@ class IpaAnalyzer:
             if transportSecurity is not None:
                 self.checkConfiguration(transportSecurity)
             else:
-                print('NSApptransportSecurity is not defined i.e by default the Transport security is Turned on')
+                print('CONFIGURATION: PASSED (By Default the Transport security is Turned on)')
 
     # get plist file from the ipa
     def getPlistFile(self):
@@ -95,13 +101,16 @@ class IpaAnalyzer:
     #check include subdomains (dependent on arbitrary load)
     def checkIncludeSubdomainsSetting(self,exceptionDomainsDic):
         includeSubdomains = exceptionDomainsDic.get('NSIncludesSubdomains')
-        self.includingAllSubdomains.append(includeSubdomains)
+        
         if includeSubdomains is not None:
             if self.allowArbitraryLoad == True:
+                self.includingAllSubdomains.append(includeSubdomains)
                 return includeSubdomains
             elif self.allowArbitraryLoad == False:
+                self.includingAllSubdomains.append(not includeSubdomains)
                 return not includeSubdomains   
         else:
+            self.includingAllSubdomains.append(includeSubdomains)
            # 'NSIncludesSubdomains : False (default)'
             return True
 
@@ -139,34 +148,36 @@ class IpaAnalyzer:
             return requiresCertificatesTransparency  
         else:
             #NSRequiresCertificatesTransparency : False (Default)   
-            return 'False (Default)'                
+            return 'False (Default)'     
+
+             
 
     def printSuggestion(self,exceptionDomain,includeSubDomains):
         
         if exceptionDomain == False:
             if self.allowArbitraryLoad == True:
                 print("\n------------------CONCLUSION---------------------")
-                print('Transport security is Disabled for all domains')
-                print('''Spend time verifying:
+                self.prRed('CONFIGURATION: FAILED (Transport security is Disabled for all domains)')
+                self.prRed('''Spend time verifying:
     • The ciphers used for the app’s backend connections (and that they’re strong)
     • The protocols used to send and retrieve data (and that they’re secure)
     • Whether the app has any downgrade vulnerabilities
     • Whether the app validates certificates used for TLS connections''')
             elif self.allowArbitraryLoad == False:            
                 print("\n------------------CONCLUSION---------------------")
-                print('Transport security is Disabled for all URLS')
+                self.prGreen('CONFIGURATION: PASSED (Transport security is Enabled for all URLS)')
 
         elif exceptionDomain == True and self.allowArbitraryLoad == True:
             print("\n------------------CONCLUSION---------------------")
-            print('''Transport security is Disabled for all URLS
-Except for URL: ''')
+            self.prGreen('''CONFIGURATION: PASSED (Transport security is Disabled for all URLS)''')
+            print("Except for URL: ")
             self.printSubDomains()
         elif exceptionDomain == True and self.allowArbitraryLoad == False:
             print("\n------------------CONCLUSION---------------------")
-            print('''Transport security is Enabled for all URLS
-Except for : ''')
+            self.prGreen('''CONFIGURATION: PASSED (Transport security is Enabled for all URLS)''')
+            print("Except for URL: ")
             self.printSubDomains()
-            print('''Spend time verifying below points for above urls:
+            self.prRed('''Spend time verifying below points for urls:
     • The ciphers used for the app’s backend connections (and that they’re strong)
     • The protocols used to send and retrieve data (and that they’re secure)
     • Whether the app has any downgrade vulnerabilities
@@ -184,7 +195,6 @@ Except for : ''')
             expectionstring += "                 " + self.exceptionURLS[i] + " --> " + subdomainsmsg + "\n"
 
         print(expectionstring)
-
 
 
     
