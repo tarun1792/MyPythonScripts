@@ -208,4 +208,6 @@ else:
     print("""
 ===================USAGES==============================
 python TransportSecurityCheck.py [IPA_Path]
+                OR
+python3 TransportSecurityCheck.py [IPA_Path] 
     """)
